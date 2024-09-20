@@ -8,16 +8,14 @@
 </head>
 <body>
     <h1>Escanea tu código QR</h1>
-    <div id="reader" style="width:300px;"></div>
+    <div id="reader" style="width:300px; height:300px;"></div>
     <div id="result"></div>
-
+    
     <script>
+        // Función que se llama cuando el escaneo es exitoso
         function onScanSuccess(decodedText, decodedResult) {
-            // Mostrar el resultado del QR escaneado
             document.getElementById("result").innerText = `Código QR escaneado: ${decodedText}`;
-
-            // Asumiendo que el código QR contiene los datos delimitados por "|"
-            // Ejemplo: "Juan Pérez|Universidad X|Estudiante|entrada"
+            
             let qrDataArray = decodedText.split("|");
 
             if (qrDataArray.length >= 4) {
@@ -26,49 +24,60 @@
                 let tipoPersona = qrDataArray[2];
                 let control = qrDataArray[3].toLowerCase();  // "entrada" o "salida"
 
-                // Obtener la hora y minutos actuales
                 let tiempoRegistro = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                // Llamar a la función para enviar los datos al Google Spreadsheet
+                // Llamada a función para enviar los datos al Google Sheet
                 sendToGoogleSheet(nombre, institucion, tipoPersona, control, tiempoRegistro);
             } else {
                 alert("El código QR no contiene suficientes datos.");
             }
         }
 
+        // Función que se llama cuando falla el escaneo
         function onScanFailure(error) {
-            // Manejar error en el escaneo
             console.warn(`Error en el escaneo: ${error}`);
         }
 
-        // Inicializar el escáner de código QR
-        let html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start(
-            { facingMode: "environment" }, // Cámara trasera
-            {
-                fps: 10,  // frames por segundo
-                qrbox: 250  // tamaño del cuadro QR
-            },
-            onScanSuccess,
-            onScanFailure
-        );
+        // Inicialización del escáner QR
+        function initializeQrCodeScanner() {
+            let html5QrCode = new Html5Qrcode("reader");
 
-        // Función para enviar los datos a Google Sheets
+            // Configuración de escaneo con cámara trasera (o usar 'user' para cámara frontal)
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                console.error(`Error al iniciar el escáner QR: ${err}`);
+                document.getElementById("result").innerText = `Error al iniciar la cámara: ${err}`;
+            });
+        }
+
+        // Función para enviar datos a Google Sheets
         function sendToGoogleSheet(nombre, institucion, tipoPersona, control, tiempoRegistro) {
             const scriptURL = 'https://script.google.com/macros/s/AKfycbyQ6wviqOmlLtuUXs4VJ0KjCgVdssc9Z1-0pZRLkNTUXE0xJKHYAvWfLODzf_N2HTp1/exec';
             fetch(scriptURL, {
-            method: 'POST',
-            body: new URLSearchParams({
-                'nombre': nombre,
-                'institucion': institucion,
-                'tipoPersona': tipoPersona,
-                'control': control,  // "entrada" o "salida"
-                'tiempoRegistro': tiempoRegistro  // Hora y minutos
-            })
+                method: 'POST',
+                body: new URLSearchParams({
+                    'nombre': nombre,
+                    'institucion': institucion,
+                    'tipoPersona': tipoPersona,
+                    'control': control,
+                    'tiempoRegistro': tiempoRegistro
+                })
             })
             .then(response => alert('Datos enviados exitosamente a Google Sheets!'))
             .catch(error => console.error('Error al enviar los datos:', error));
         }
+
+        // Espera que el documento esté listo para inicializar la cámara
+        document.addEventListener("DOMContentLoaded", function() {
+            initializeQrCodeScanner();
+        });
     </script>
 </body>
 </html>
