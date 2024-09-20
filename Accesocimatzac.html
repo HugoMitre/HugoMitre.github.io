@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escanear Código QR</title>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+</head>
+<body>
+    <h1>Escanea tu código QR</h1>
+    <div id="reader" style="width:300px;"></div>
+    <div id="result"></div>
+
+    <script>
+        function onScanSuccess(decodedText, decodedResult) {
+            // Mostrar el resultado del QR escaneado
+            document.getElementById("result").innerText = `Código QR escaneado: ${decodedText}`;
+
+            // Asumiendo que el código QR contiene los datos delimitados por "|"
+            // Ejemplo: "Juan Pérez|Universidad X|Estudiante|entrada"
+            let qrDataArray = decodedText.split("|");
+
+            if (qrDataArray.length >= 4) {
+                let nombre = qrDataArray[0];
+                let institucion = qrDataArray[1];
+                let tipoPersona = qrDataArray[2];
+                let control = qrDataArray[3].toLowerCase();  // "entrada" o "salida"
+
+                // Obtener la hora y minutos actuales
+                let tiempoRegistro = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                // Llamar a la función para enviar los datos al Google Spreadsheet
+                sendToGoogleSheet(nombre, institucion, tipoPersona, control, tiempoRegistro);
+            } else {
+                alert("El código QR no contiene suficientes datos.");
+            }
+        }
+
+        function onScanFailure(error) {
+            // Manejar error en el escaneo
+            console.warn(`Error en el escaneo: ${error}`);
+        }
+
+        // Inicializar el escáner de código QR
+        let html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" }, // Cámara trasera
+            {
+                fps: 10,  // frames por segundo
+                qrbox: 250  // tamaño del cuadro QR
+            },
+            onScanSuccess,
+            onScanFailure
+        );
+
+        // Función para enviar los datos a Google Sheets
+        function sendToGoogleSheet(nombre, institucion, tipoPersona, control, tiempoRegistro) {
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbyQ6wviqOmlLtuUXs4VJ0KjCgVdssc9Z1-0pZRLkNTUXE0xJKHYAvWfLODzf_N2HTp1/exec';
+            fetch(scriptURL, {
+                method: 'POST',
+                body: new URLSearchParams({
+                    'nombre': nombre,
+                    'institucion': institucion,
+                    'tipoPersona': tipoPersona,
+                    'control': control,  // "entrada" o "salida"
+                    'tiempoRegistro': tiempoRegistro  // Hora y minutos
+                })
+            })
+            .then(response => alert('Datos enviados exitosamente a Google Sheets!'))
+            .catch(error => console.error('Error al enviar los datos:', error));
+        }
+    </script>
+</body>
+</html>
