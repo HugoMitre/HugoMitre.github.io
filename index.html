@@ -57,14 +57,14 @@
         function sendToGoogleSheet(nombre, institucion, tipoPersona, control, tiempoRegistro) {
             const scriptURL = 'https://script.google.com/macros/s/AKfycbyQ6wviqOmlLtuUXs4VJ0KjCgVdssc9Z1-0pZRLkNTUXE0xJKHYAvWfLODzf_N2HTp1/exec';
             fetch(scriptURL, {
-                method: 'POST',
-                body: new URLSearchParams({
-                    'nombre': nombre,
-                    'institucion': institucion,
-                    'tipoPersona': tipoPersona,
-                    'control': control,  // "entrada" o "salida"
-                    'tiempoRegistro': tiempoRegistro  // Hora y minutos
-                })
+            method: 'POST',
+            body: new URLSearchParams({
+                'nombre': nombre,
+                'institucion': institucion,
+                'tipoPersona': tipoPersona,
+                'control': control,  // "entrada" o "salida"
+                'tiempoRegistro': tiempoRegistro  // Hora y minutos
+            })
             })
             .then(response => alert('Datos enviados exitosamente a Google Sheets!'))
             .catch(error => console.error('Error al enviar los datos:', error));
